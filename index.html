@@ -1259,12 +1259,11 @@
                         </div>
                     </div>`,
                     confirmText: '完成并关闭', 
-                    cancelText: '我直接去店里'
+                    cancelText: '关闭'
                 });
 
-                if (finalAction !== true) { 
-                    openAmapNavi(); 
-                } else if (isFromCart) { 
+                // 取消了自动跳转高德的逻辑，无论点击哪个按钮，只要是从购物车发起的，就直接关闭面板
+                if (isFromCart) { 
                     closeCart(); 
                 }
 
