@@ -1814,7 +1814,7 @@
                 const badgeHtml = parsed.badge ? `<div class="marketing-badge ${parsed.badge}">${BADGE_MAP[parsed.badge] || ''}</div>` : '';
                 let urgencyHtml = '';
                 if (parsed.badge === 'hot' || parsed.badge === 'discount') {
-                    urgencyHtml = `<div style="font-size: 11px; color: var(--accent-color); margin-top: 6px; display: flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>近期多人咨询，建议先锁单</div>`;
+                    urgencyHtml = `<div style="font-size: 11px; color: var(--accent-color); margin-top: 6px; display: flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>近期多人咨询</div>`;
                 }
 
                 return `
