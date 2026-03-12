@@ -62,6 +62,10 @@
         .announcement-bar .marquee { white-space: nowrap; overflow: hidden; display: inline-block; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
+        /* 动画：向下滑动提示 */
+        @keyframes bounceDown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+        .scroll-hint-icon { display: inline-block; animation: bounceDown 1.5s ease-in-out infinite; }
+
         header { background: var(--header-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--divider); position: sticky; top: 0; width: 100%; z-index: 1000; padding-top: env(safe-area-inset-top); transition: background 0.3s ease; }
         .header-inner { max-width: 1200px; margin: 0 auto; }
         .header-content { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-sm) var(--spacing-lg) 0; }
@@ -108,7 +112,7 @@
         .card { background-color: var(--card-color); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; border: 0.5px solid var(--divider); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.2s; position: relative; }
         :root.light-mode .card { border-color: transparent; } 
         @media (hover: hover) { .card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); } :root.light-mode .card:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.08); } }
-        .card:active { transform: scale(0.98); opacity: 0.9; } /* 增强移动端点击反馈 */
+        .card:active { transform: scale(0.98); opacity: 0.9; }
         
         .marketing-badge { position: absolute; top: 0; right: 0; padding: 4px 10px; font-size: 11px; font-weight: bold; color: #FFF; border-bottom-left-radius: 12px; z-index: 3; box-shadow: -2px 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 3px; pointer-events: none;}
         .marketing-badge.hot { background: linear-gradient(135deg, #FF4142, #FF7B00); }
@@ -120,6 +124,7 @@
         .card-img > svg { width: 48px; height: 48px; color: var(--text-secondary); opacity: 0.5; pointer-events: none; }
         .card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; pointer-events: none;}
         @media (hover: hover) { .card:hover .card-img img { transform: scale(1.03); } }
+        
         /* ===== 大厂风格：状态标签 ===== */
         .stock-badge { 
             position: absolute; top: 10px; left: 10px; 
@@ -128,15 +133,15 @@
             font-size: 11px; 
             font-weight: 600; 
             padding: 4px 10px; 
-            border-radius: 999px; 
-            backdrop-filter: saturate(180%) blur(12px); 
+            border-radius: 999px; /* 胶囊圆角 */
+            backdrop-filter: saturate(180%) blur(12px); /* 高级毛玻璃 */
             -webkit-backdrop-filter: saturate(180%) blur(12px); 
             z-index: 2; 
             pointer-events: none; 
             display: flex; 
             align-items: center; 
-            gap: 5px; 
-            border: 0.5px solid rgba(255, 255, 255, 0.15); 
+            gap: 5px; /* 圆点和文字的间距 */
+            border: 0.5px solid rgba(255, 255, 255, 0.15); /* 极细描边质感 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); 
             letter-spacing: 0.5px; 
         }
@@ -146,6 +151,8 @@
             border: 0.5px solid rgba(0, 0, 0, 0.08); 
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); 
         }
+        
+        /* 无货/售罄状态：灰色小圆点 */
         .stock-badge::before { 
             content: ''; 
             display: block; 
@@ -154,8 +161,12 @@
             border-radius: 50%; 
             background-color: #888; 
         }
+        
+        /* 有货/现货状态背景 */
         .stock-badge.in-stock { background: rgba(30, 30, 30, 0.75); }
         :root.light-mode .stock-badge.in-stock { background: rgba(255, 255, 255, 0.95); }
+        
+        /* 有货/现货状态：带微发光效果的绿色小圆点 */
         .stock-badge.in-stock::before { 
             background-color: #34C759; 
             box-shadow: 0 0 6px rgba(52, 199, 89, 0.6); 
@@ -200,14 +211,13 @@
 
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;}
-        /* 统一输入框为16px防止iOS唤出输入法时放大画面 */
         .form-control { width: 100%; background: var(--img-bg); border: 1px solid transparent; color: var(--text-primary); padding: 14px 16px; border-radius: 8px; font-size: 16px; outline: none; -webkit-appearance: none; box-sizing: border-box; transition: all 0.2s ease; }
         .form-control:focus { border-color: var(--accent-color); background: var(--card-color); }
         select.form-control { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .cart-item { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; padding: 16px 8px; margin: 0 -8px; border-bottom: 0.5px solid var(--divider); transition: background-color 0.2s; border-radius: 8px; }
-        .cart-item:active { background-color: var(--img-bg); } /* 列表点击反馈 */
+        .cart-item:active { background-color: var(--img-bg); } 
         .cart-item:last-child { border-bottom: none; }
         .cart-item-img { width: 64px; height: 64px; border-radius: 8px; background: var(--img-bg); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 0.5px solid var(--divider); pointer-events: none;}
         .cart-item-img svg { width: 28px; height: 28px; color: var(--text-secondary); opacity: 0.7;}
@@ -414,7 +424,7 @@
         <div class="cart-footer">
             <div style="background: rgba(255, 149, 0, 0.1); border: 1px dashed #FF9500; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: #d07a00; line-height: 1.5; text-align: left;">
                 <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align: text-bottom; margin-right: 2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                <b>老板提醒：</b>本店承诺 100% 正品行货，提供专业调试装车与完善售后，算上工时总账更划算！
+                <b>老板提醒：</b>刹车减震关乎生命！网购水深高仿多，本店承诺 100% 正品行货，提供专业调试装车与完善售后，算上工时总账更划算！
             </div>
             <div style="font-size: 12px; color: #34C759; text-align: center; margin-bottom: 12px; font-weight: 500;"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align: text-bottom;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> 实体店担保 · 预定金随时全额秒退</div>
             <div class="total-row"><span style="font-weight: 500; color: var(--text-secondary);">总计</span><span id="total-price">0.00</span></div>
@@ -613,9 +623,8 @@
         let lastHapticTime = 0;
         function triggerHaptic() { 
             const now = Date.now(); 
-            // 降低防抖阈值至 50ms，提升触控快速响应感
-            if (navigator.vibrate && now - lastHapticTime > 50) { 
-                navigator.vibrate([15]); // 使用更短的数组震动，手感更干脆
+            if (navigator.vibrate && now - lastHapticTime > 100) { 
+                navigator.vibrate(30); 
                 lastHapticTime = now; 
             } 
         }
@@ -1281,8 +1290,21 @@
                     desc: `
                     <div style="text-align: left; font-size: 14px; line-height: 1.6; color: var(--text-primary); margin-top: 5px;">
                         
+                        <div style="background: linear-gradient(135deg, rgba(52,199,89,0.15), rgba(52,199,89,0.05)); border: 1px solid rgba(52, 199, 89, 0.3); padding: 16px 12px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
+                            <div style="color: #34C759; font-size: 16px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="3" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>老板已收到新单提醒！
+                            </div>
+                            <div style="color: var(--text-primary); font-size: 13px; line-height: 1.5; margin-bottom: 12px;">
+                                请等待老板通过您预留的联系方式找到您。<br>
+                                您也可以<b style="color:var(--accent-color);">主动添加老板微信</b>极速沟通！
+                            </div>
+                            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: var(--card-color); padding: 6px 12px; border-radius: 999px; color: var(--text-secondary); font-size: 12px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 0.5px solid var(--divider);">
+                                向下滑动查看老板微信及凭证 <span class="scroll-hint-icon"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-top: 2px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                            </div>
+                        </div>
+
                         <div style="background: var(--img-bg); padding: 16px 12px; border-radius: 12px; text-align: center; margin-bottom: 16px;">
-                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px; color: var(--text-primary);">1. 长按识别二维码添加老板<br>2. 发送刚刚复制的订单凭证</div>
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px; color: var(--text-primary);">长按识别二维码添加老板，发送刚才复制的凭证</div>
                             <div style="margin: 0 auto 10px; width: 140px; height: 140px; background: #FFF; padding: 6px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);"><img src="${qrImgSrc}" alt="老板微信" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; -webkit-touch-callout: default;"></div>
                             <button onclick="saveQRCode('${qrImgSrc}')" style="background: transparent; color: var(--text-primary); border: 1px solid var(--divider); padding: 6px 16px; border-radius: 99px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 4px; width: 100%;"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>保存二维码到手机相册</button>
                             <button onclick="manualCopyOrder()" style="background: transparent; color: var(--text-primary); border: 1px solid var(--divider); padding: 8px 16px; border-radius: 99px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px;"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>复制订单凭证与明细</button>
