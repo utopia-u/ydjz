@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>记账本 Pro</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
     <style>
         :root {
             --ios-bg: #F2F2F7;
@@ -171,32 +170,82 @@
 
         <div class="section-header">月度统计</div>
         <div class="ios-group" id="monthlyList">
-            <div class="empty-state">连接数据库中...</div>
+            <div class="empty-state">等待就绪...</div>
         </div>
 
         <div class="section-header">历史记录</div>
         <div class="ios-group" id="historyList">
-            <div class="empty-state">连接数据库中...</div>
+            <div class="empty-state">正在加载底层组件...</div>
         </div>
     </div>
 
-    <script>
-        // --- 全局防死锁拦截 ---
-        window.onerror = function(message) {
-            console.error("系统错误:", message);
-            showToast('脚本执行出错', 'error');
+    <script type="module">
+        
+        // 全局报错捕获依然保留
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorText = message || '未知异常';
+            document.getElementById('toast').innerText = '遇到错误，请看下方提示';
+            document.getElementById('toast').className = 'show error';
+            document.getElementById('historyList').innerHTML = 
+                `<div class="empty-state" style="color:var(--ios-red); text-align:left; word-break:break-all;">
+                    <b>程序崩溃信息：</b><br>${errorText}<br>行号: ${lineno}
+                </div>`;
             return true;
         };
 
-        // --- 数据库配置 ---
         const SUPABASE_URL = 'https://htqjfniugsahibhkjszb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWpmbml1Z3NhaGliaGtqc3piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDI2NDksImV4cCI6MjA4OTIxODY0OX0.pmMUaaLLZ-RWFt_bkFPFiSLmdM4LKbG6SI-q2TEe-j8';
         
         let supabase = null;
         let localData = []; 
-
-        // --- 工具函数 ---
         let toastTimeout;
+
+        // --- 核心突破：多路智能备胎加载引擎 ---
+        async function loadSupabaseEngine() {
+            // 我们不依赖单一节点，准备了三条不同的取件路线
+            const cdnRoutes = [
+                'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm',  // 路线 1: 国际大厂
+                'https://esm.sh/@supabase/supabase-js@2',                       // 路线 2: 专线加速
+                'https://unpkg.com/@supabase/supabase-js@2?module'              // 路线 3: 传统备用
+            ];
+
+            for (const url of cdnRoutes) {
+                try {
+                    // 动态引入：不仅能捕捉网络拦截，还能检查代码有效性
+                    const module = await import(url);
+                    return module.createClient; 
+                } catch (e) {
+                    console.warn(`[节点切换] 节点 ${url} 被拦截，无缝切换下一个...`);
+                }
+            }
+            // 如果三个全被防火墙屏蔽了，才会抛出最终报错
+            throw new Error("所有加速节点均无法访问");
+        }
+
+        // --- 主启动程序 ---
+        async function bootstrap() {
+            initDateUI();
+            try {
+                // 第一步：加载核心引擎
+                const createClient = await loadSupabaseEngine();
+                document.getElementById('historyList').innerHTML = '<div class="empty-state">引擎加载成功，正在同步数据...</div>';
+                
+                // 第二步：连接数据库
+                supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+                await fetchCloudData();
+            } catch (err) {
+                document.getElementById('historyList').innerHTML = 
+                    `<div class="empty-state" style="color:var(--ios-red);"><b>初始化彻底失败</b><br>${err.message}<br>请尝试关闭/开启代理或更换 WiFi</div>`;
+                document.getElementById('monthlyList').innerHTML = '<div class="empty-state">加载中止</div>';
+            }
+        }
+        
+        // 瞬间启动
+        bootstrap();
+
+
+        // --- UI 与业务逻辑 ---
+        
         function showToast(msg, type = 'normal') {
             const toast = document.getElementById('toast');
             toast.innerText = msg;
@@ -212,37 +261,14 @@
             }[tag]));
         }
 
-        // 核心修复2：无论网络如何，第一秒立刻初始化页面内容
-        function initUI() {
+        function initDateUI() {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
             document.getElementById('dateInput').value = `${year}-${month}-${day}`;
         }
-        initUI(); // 立刻执行！不需要等 window.onload
 
-        // 核心修复3：轮询等待云端组件加载 (最多等10秒)
-        let checkCount = 0;
-        const initSupabase = setInterval(async () => {
-            checkCount++;
-            
-            // 如果组件加载成功了
-            if (typeof window.supabase !== 'undefined') {
-                clearInterval(initSupabase);
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                await fetchCloudData();
-            } 
-            // 如果等了 10 秒（20次 * 0.5秒）还没加载出来，说明网络彻底墙了
-            else if (checkCount > 20) {
-                clearInterval(initSupabase);
-                showToast('网络连接失败', 'error');
-                document.getElementById('historyList').innerHTML = '<div class="empty-state" style="color:var(--ios-red);">数据库组件加载超时<br>请尝试切换 WiFi、开启代理或刷新页面</div>';
-                document.getElementById('monthlyList').innerHTML = '<div class="empty-state">连接失败</div>';
-            }
-        }, 500);
-
-        // --- 业务逻辑 ---
         async function fetchCloudData() {
             try {
                 const { data, error } = await supabase
@@ -255,8 +281,7 @@
                 localData = data || []; 
                 renderUI();
             } catch (err) {
-                console.error("拉取数据失败:", err);
-                document.getElementById('historyList').innerHTML = `<div class="empty-state">拉取失败: ${err.message}</div>`;
+                document.getElementById('historyList').innerHTML = `<div class="empty-state" style="color:var(--ios-red);">拉取失败: ${err.message}</div>`;
             }
         }
 
@@ -299,6 +324,7 @@
             }
         });
 
+        // 模块作用域下，函数需要挂载到 window 才能在 HTML 中调用
         window.deleteItem = async function(id) {
             if (!supabase) return;
             if (!confirm('确定要删除这条记录吗？')) return;
@@ -312,11 +338,10 @@
                 renderUI();
                 showToast('记录已删除', 'success');
             } catch (err) {
-                showToast('删除失败', 'error');
+                showToast('删除失败: ' + err.message, 'error');
             }
         };
 
-        // --- 渲染引擎 ---
         function renderUI() {
             const historyList = document.getElementById('historyList');
             const monthlyList = document.getElementById('monthlyList');
