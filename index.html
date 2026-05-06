@@ -18,22 +18,17 @@
         }
 
         body {
-            /* 调用苹果原生字体 */
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
             background-color: var(--ios-bg);
             color: var(--ios-text-primary);
             margin: 0;
             padding: 0;
-            padding-bottom: 40px; /* 底部留白，防遮挡 */
+            padding-bottom: 40px;
             -webkit-font-smoothing: antialiased;
         }
 
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
+        .container { max-width: 500px; margin: 0 auto; }
 
-        /* iOS 大标题 */
         .large-title {
             font-size: 34px;
             font-weight: 700;
@@ -41,25 +36,24 @@
             margin: 30px 16px 10px;
         }
 
-        /* 顶部状态栏提示 */
         #status {
             text-align: center;
             font-size: 13px;
-            color: var(--ios-text-secondary);
             height: 18px;
             margin-top: 10px;
+            transition: color 0.3s;
         }
+        .status-normal { color: var(--ios-text-secondary); }
+        .status-error { color: var(--ios-red); font-weight: 500; }
+        .status-success { color: #34C759; font-weight: 500; }
 
-        /* 分组标题 */
         .section-header {
             font-size: 13px;
             text-transform: uppercase;
             color: var(--ios-text-secondary);
             margin: 25px 16px 8px;
-            letter-spacing: -0.08px;
         }
 
-        /* iOS 卡片/列表组 */
         .ios-group {
             background-color: var(--ios-card);
             border-radius: 10px;
@@ -67,7 +61,6 @@
             overflow: hidden;
         }
 
-        /* 表单输入区 */
         .input-row {
             display: flex;
             align-items: center;
@@ -75,13 +68,8 @@
             border-bottom: 0.5px solid var(--ios-separator);
             min-height: 44px;
         }
-        .input-row:last-child {
-            border-bottom: none;
-        }
-        .input-row label {
-            width: 80px;
-            font-size: 17px;
-        }
+        .input-row:last-child { border-bottom: none; }
+        .input-row label { width: 80px; font-size: 17px; }
         .input-row input {
             flex: 1;
             border: none;
@@ -91,11 +79,8 @@
             background: transparent;
             color: var(--ios-text-primary);
         }
-        .input-row input::placeholder {
-            color: #C7C7CC;
-        }
+        .input-row input::placeholder { color: #C7C7CC; }
 
-        /* 主按钮 */
         .submit-btn {
             display: block;
             width: calc(100% - 32px);
@@ -108,12 +93,10 @@
             font-weight: 600;
             padding: 14px;
             cursor: pointer;
-            transition: opacity 0.2s ease;
         }
         .submit-btn:active { opacity: 0.7; }
         .submit-btn:disabled { background-color: #A1C9F7; cursor: not-allowed; }
 
-        /* 列表项 */
         .list-row {
             display: flex;
             justify-content: space-between;
@@ -127,14 +110,10 @@
         .list-info { display: flex; flex-direction: column; gap: 4px; }
         .list-desc { font-size: 17px; font-weight: 400; }
         .list-date { font-size: 13px; color: var(--ios-text-secondary); }
-        
         .list-right { display: flex; align-items: center; gap: 15px; }
         .list-amount { font-size: 17px; font-weight: 500; }
-        
-        /* 统计数字颜色 */
         .text-blue { color: var(--ios-blue); }
         
-        /* iOS 文字按钮 (删除) */
         .delete-btn {
             color: var(--ios-red);
             background: none;
@@ -142,9 +121,7 @@
             font-size: 15px;
             padding: 4px 8px;
             cursor: pointer;
-            transition: opacity 0.2s;
         }
-        .delete-btn:active { opacity: 0.5; }
 
         .empty-state {
             text-align: center;
@@ -157,7 +134,7 @@
 <body>
 
     <div class="container">
-        <div id="status"></div>
+        <div id="status" class="status-normal"></div>
         <h1 class="large-title">记账本</h1>
 
         <div class="section-header">记一笔</div>
@@ -168,7 +145,7 @@
             </div>
             <div class="input-row">
                 <label>金额</label>
-                <input type="number" id="amountInput" placeholder="0.00" step="0.01">
+                <input type="number" id="amountInput" placeholder="0.00" step="0.01" min="0.01">
             </div>
             <div class="input-row">
                 <label>备注</label>
@@ -178,104 +155,137 @@
         <button id="addBtn" class="submit-btn" onclick="addRecord()">保存</button>
 
         <div class="section-header">月度统计</div>
-        <div class="ios-group" id="monthlyList">
-            </div>
+        <div class="ios-group" id="monthlyList"></div>
 
         <div class="section-header">历史记录</div>
-        <div class="ios-group" id="historyList">
-            </div>
+        <div class="ios-group" id="historyList"></div>
     </div>
 
     <script>
+        // 你的 Supabase 密钥
         const SUPABASE_URL = 'https://htqjfniugsahibhkjszb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWpmbml1Z3NhaGliaGtqc3piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDI2NDksImV4cCI6MjA4OTIxODY0OX0.pmMUaaLLZ-RWFt_bkFPFiSLmdM4LKbG6SI-q2TEe-j8';
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
         let localData = []; 
 
+        // 安全地获取当前当地时间 YYYY-MM-DD
+        function getLocalDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         window.onload = () => {
-            document.getElementById('dateInput').valueAsDate = new Date();
+            document.getElementById('dateInput').value = getLocalDateString();
             loadData(); 
         };
 
-        function setStatus(msg) {
-            document.getElementById('status').innerText = msg;
+        // 状态提示器
+        function setStatus(msg, type = 'normal') {
+            const statusEl = document.getElementById('status');
+            statusEl.innerText = msg;
+            statusEl.className = `status-${type}`;
             if(msg) {
-                setTimeout(() => { document.getElementById('status').innerText = ''; }, 3000);
+                setTimeout(() => { statusEl.innerText = ''; }, 3000);
             }
         }
 
+        // 加载数据
         async function loadData() {
-            setStatus('正在同步云端数据...');
-            const { data, error } = await supabase
-                .from('expenses')
-                .select('*')
-                .order('date', { ascending: false })
-                .order('id', { ascending: false });
+            setStatus('正在同步云端数据...', 'normal');
+            try {
+                const { data, error } = await supabase
+                    .from('expenses')
+                    .select('*')
+                    .order('date', { ascending: false })
+                    .order('id', { ascending: false });
 
-            if (error) {
-                console.error(error);
-                setStatus('网络连接失败');
-                return;
+                if (error) throw error;
+                
+                localData = data || []; 
+                render(localData);
+                setStatus('同步成功', 'success');
+            } catch (err) {
+                console.error("Load Error:", err);
+                setStatus('加载失败，请检查网络或配置', 'error');
             }
-            
-            localData = data || []; 
-            render(localData);
-            setStatus(''); // 加载完毕清空提示
         }
 
+        // 核心修复：添加记录
         async function addRecord() {
             const date = document.getElementById('dateInput').value;
-            const amount = parseFloat(document.getElementById('amountInput').value);
+            const amountInputStr = document.getElementById('amountInput').value;
+            const amount = parseFloat(amountInputStr);
             const desc = document.getElementById('descInput').value || '日常支出';
 
-            if (!date || !amount) {
-                alert('请填写金额');
+            // 严谨的输入校验
+            if (!date) {
+                setStatus('请选择日期', 'error');
+                return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                setStatus('请输入有效金额', 'error');
                 return;
             }
 
-            document.getElementById('addBtn').disabled = true;
-            setStatus('保存中...');
+            const btn = document.getElementById('addBtn');
+            btn.disabled = true;
+            setStatus('保存中...', 'normal');
 
-            const { data, error } = await supabase
-                .from('expenses')
-                .insert([{ date, amount, desc }])
-                .select(); 
+            try {
+                const { data, error } = await supabase
+                    .from('expenses')
+                    .insert([{ date, amount, desc }])
+                    .select(); 
 
-            document.getElementById('addBtn').disabled = false;
+                if (error) throw error;
 
-            if (error) {
-                alert('保存失败：' + error.message);
-                setStatus('');
-            } else if (data && data.length > 0) {
-                document.getElementById('amountInput').value = '';
-                document.getElementById('descInput').value = '';
-                
-                localData.unshift(data[0]); 
-                localData.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
-                
-                render(localData);
-                setStatus('已保存');
+                if (data && data.length > 0) {
+                    // 清空输入框
+                    document.getElementById('amountInput').value = '';
+                    document.getElementById('descInput').value = '';
+                    
+                    // 更新本地缓存并渲染
+                    localData.unshift(data[0]); 
+                    localData.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+                    render(localData);
+                    
+                    setStatus('已保存', 'success');
+                }
+            } catch (err) {
+                console.error("Save Error:", err);
+                alert('保存失败: ' + err.message);
+                setStatus('保存失败', 'error');
+            } finally {
+                // 确保无论成功失败，按钮一定会被解开
+                btn.disabled = false;
             }
         }
 
+        // 核心修复：删除记录
         async function deleteItem(id) {
             if (!confirm('确定要删除这条记录吗？')) return;
             
-            setStatus('删除中...');
-            const { error } = await supabase.from('expenses').delete().eq('id', id);
-            
-            if (error) {
-                alert('删除失败');
-                setStatus('');
-            } else {
+            setStatus('删除中...', 'normal');
+            try {
+                const { error } = await supabase.from('expenses').delete().eq('id', id);
+                if (error) throw error;
+                
+                // 本地移除并渲染
                 localData = localData.filter(item => item.id !== id);
                 render(localData);
-                setStatus('已删除');
+                setStatus('已删除', 'success');
+            } catch (err) {
+                console.error("Delete Error:", err);
+                alert('删除失败');
+                setStatus('删除失败', 'error');
             }
         }
 
+        // 核心修复：渲染引擎 (强制类型转换)
         function render(data) {
             const historyList = document.getElementById('historyList');
             const monthlyList = document.getElementById('monthlyList');
@@ -290,8 +300,10 @@
 
             const months = {};
 
-            // 渲染明细
             data.forEach(item => {
+                // 强制将云端数据转换为浮点数，防止 toFixed 崩溃
+                const safeAmount = Number(item.amount) || 0;
+
                 const div = document.createElement('div');
                 div.className = 'list-row';
                 div.innerHTML = `
@@ -300,17 +312,16 @@
                         <span class="list-date">${item.date}</span>
                     </div>
                     <div class="list-right">
-                        <span class="list-amount">￥${item.amount.toFixed(2)}</span>
+                        <span class="list-amount">￥${safeAmount.toFixed(2)}</span>
                         <button class="delete-btn" onclick="deleteItem(${item.id})">删除</button>
                     </div>
                 `;
                 historyList.appendChild(div);
 
                 const m = item.date.substring(0, 7);
-                months[m] = (months[m] || 0) + item.amount;
+                months[m] = (months[m] || 0) + safeAmount;
             });
 
-            // 渲染汇总
             Object.keys(months).sort().reverse().forEach(m => {
                 const div = document.createElement('div');
                 div.className = 'list-row';
