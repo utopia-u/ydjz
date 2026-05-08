@@ -33,121 +33,54 @@
             user-select: none;
         }
 
-        /* 隐藏滚动条但保留滚动功能 */
         ::-webkit-scrollbar { display: none; }
-
         .container { max-width: 500px; margin: 0 auto; padding-bottom: 60px; }
 
-        .header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 20px 16px 15px;
-        }
+        /* Header & Labels */
+        .header-area { display: flex; justify-content: space-between; align-items: center; margin: 20px 16px 15px; }
+        .large-title { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
+        .section-header { font-size: 13px; text-transform: uppercase; color: var(--ios-text-secondary); margin: 25px 16px 8px; font-weight: 500; display: flex; justify-content: space-between; }
 
-        .large-title {
-            font-size: 34px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin: 0;
-        }
-
-        .install-btn {
-            background-color: var(--ios-card);
-            color: var(--ios-blue);
-            border: none;
-            border-radius: 18px;
-            padding: 8px 14px;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* 预算卡片优化 */
+        /* Budget Card */
         .budget-card {
-            margin: 0 16px 25px;
-            padding: 24px;
+            margin: 0 16px 25px; padding: 24px;
             background: linear-gradient(145deg, #007AFF, #0056b3);
-            border-radius: 24px;
-            color: white;
+            border-radius: 24px; color: white;
             box-shadow: 0 12px 24px rgba(0, 122, 255, 0.3);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
-        .budget-card::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            pointer-events: none;
-        }
+        .budget-amount { font-size: 42px; font-weight: 800; margin: 12px 0; font-variant-numeric: tabular-nums; }
+
+        /* Category Picker */
+        .category-picker { display: flex; justify-content: space-around; padding: 15px 10px; background: var(--ios-card); border-bottom: 0.5px solid var(--ios-separator); }
+        .category-item { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.4; transition: all 0.2s; cursor: pointer; }
+        .category-item.active { opacity: 1; transform: scale(1.1); color: var(--ios-blue); font-weight: 600; }
+        .cat-icon { font-size: 24px; }
+        .cat-label { font-size: 11px; }
+
+        /* Quick Amounts */
+        .quick-amounts { display: flex; gap: 8px; padding: 10px 16px; background: var(--ios-card); overflow-x: auto; border-bottom: 0.5px solid var(--ios-separator); }
+        .q-btn { background: #F2F2F7; border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; color: var(--ios-blue); font-weight: 500; white-space: nowrap; }
+
+        /* List & Input Groups */
+        .ios-group { background-color: var(--ios-card); border-radius: 12px; margin: 0 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .input-row { display: flex; align-items: center; padding: 0 16px; border-bottom: 0.5px solid var(--ios-separator); min-height: 48px; }
+        .input-row input { flex: 1; border: none; outline: none; font-size: 17px; padding: 12px 0; background: transparent; color: var(--ios-text-primary); }
         
-        .budget-header {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 14px; opacity: 0.85; font-weight: 500;
-        }
-        .budget-amount {
-            font-size: 42px; font-weight: 800; margin: 12px 0;
-            font-variant-numeric: tabular-nums;
-        }
+        .search-row { margin: 10px 16px; position: relative; }
+        .search-input { width: 100%; border: none; background: #E3E3E8; padding: 8px 12px; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; }
 
-        /* 列表组优化 */
-        .section-header {
-            font-size: 13px; text-transform: uppercase;
-            color: var(--ios-text-secondary); margin: 25px 16px 8px;
-            font-weight: 500;
-        }
-        .ios-group {
-            background-color: var(--ios-card); border-radius: 12px;
-            margin: 0 16px; overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-
-        .input-row {
-            display: flex; align-items: center; padding: 0 16px;
-            border-bottom: 0.5px solid var(--ios-separator); min-height: 48px;
-        }
-        .input-row input {
-            flex: 1; border: none; outline: none; font-size: 17px;
-            padding: 12px 0; background: transparent; color: var(--ios-text-primary);
-        }
-
-        .list-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 16px; border-bottom: 0.5px solid var(--ios-separator);
-            transition: background-color 0.2s;
-        }
-        .list-row:active { background-color: #F2F2F7; }
-        
-        .list-info { display: flex; flex-direction: column; gap: 2px; }
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 0.5px solid var(--ios-separator); }
+        .list-info { display: flex; flex-direction: column; }
         .list-desc { font-size: 17px; font-weight: 500; }
-        .list-date { font-size: 13px; color: var(--ios-text-secondary); }
+        .list-sub { font-size: 13px; color: var(--ios-text-secondary); }
         .list-amount { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-        
-        .delete-btn {
-            color: var(--ios-red); border: none; background: #FFF1F0;
-            padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
-        }
 
-        /* 全局 Toast */
-        #toast {
-            position: fixed; bottom: 50px; left: 50%;
-            background-color: rgba(0, 0, 0, 0.85); color: white;
-            padding: 12px 24px; border-radius: 25px; font-size: 14px;
-            z-index: 9999; transform: translate(-50%, 100px); opacity: 0;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        }
+        .submit-btn { width: calc(100% - 32px); margin: 20px 16px; background: var(--ios-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; }
+        .delete-btn { color: var(--ios-red); border: none; background: #FFF1F0; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+
+        #toast { position: fixed; bottom: 50px; left: 50%; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; transform: translate(-50%, 100px); opacity: 0; transition: 0.3s; z-index: 100; }
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
-
-        /* 加载动画 */
-        .loading-shimmer {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body>
@@ -157,20 +90,17 @@
     <div class="container">
         <div class="header-area">
             <h1 class="large-title">记账本</h1>
-            <button class="install-btn" id="installBtn" onclick="triggerInstall()">
-                <span>＋</span>装到桌面
-            </button>
+            <div id="syncStatus" style="font-size: 12px; color: var(--ios-text-secondary);">就绪</div>
         </div>
 
-        <div class="budget-card" id="budgetCard">
-            <div class="budget-header">
-                <span id="ui-budget-title">剩余生活费</span>
-                <span style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:10px; font-size:11px;" id="syncStatus">云端已同步</span>
+        <div class="budget-card">
+            <div style="display:flex; justify-content:space-between; font-size:14px; opacity:0.8;">
+                <span>本月剩余</span>
+                <span onclick="setCloudBudget()" style="text-decoration:underline;">修改预算</span>
             </div>
             <div class="budget-amount" id="ui-budget-remaining">￥0.00</div>
-            <div class="budget-footer" style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);">
+            <div style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
                 <span>预算: <span id="ui-budget-total">0.00</span></span>
-                <span onclick="setCloudBudget()" style="text-decoration:underline; cursor:pointer;">修改预算</span>
                 <span>已花: <span id="ui-budget-spent">0.00</span></span>
             </div>
         </div>
@@ -178,196 +108,177 @@
         <form id="expenseForm">
             <div class="section-header">新增记录</div>
             <div class="ios-group">
-                <div class="input-row">
-                    <input type="date" id="dateInput" required>
+                <div class="category-picker" id="categoryPicker">
+                    <div class="category-item active" data-cat="餐饮"><span class="cat-icon">🍔</span><span class="cat-label">餐饮</span></div>
+                    <div class="category-item" data-cat="购物"><span class="cat-icon">🛍️</span><span class="cat-label">购物</span></div>
+                    <div class="category-item" data-cat="交通"><span class="cat-icon">🚗</span><span class="cat-label">交通</span></div>
+                    <div class="category-item" data-cat="娱乐"><span class="cat-icon">🎮</span><span class="cat-label">娱乐</span></div>
+                    <div class="category-item" data-cat="其他"><span class="cat-icon">🏷️</span><span class="cat-label">其他</span></div>
                 </div>
-                <div class="input-row">
-                    <input type="number" id="amountInput" placeholder="请输入金额 (￥)" step="0.01" inputmode="decimal" required>
+                <div class="quick-amounts">
+                    <button type="button" class="q-btn" onclick="setAmount(10)">￥10</button>
+                    <button type="button" class="q-btn" onclick="setAmount(20)">￥20</button>
+                    <button type="button" class="q-btn" onclick="setAmount(50)">￥50</button>
+                    <button type="button" class="q-btn" onclick="setAmount(100)">￥100</button>
                 </div>
-                <div class="input-row">
-                    <input type="text" id="descInput" placeholder="写点备注..." maxlength="20" required>
-                </div>
+                <div class="input-row"><input type="number" id="amountInput" placeholder="请输入金额" step="0.01" inputmode="decimal" required></div>
+                <div class="input-row"><input type="text" id="descInput" placeholder="备注 (如：午饭)" maxlength="20" required></div>
+                <div class="input-row"><input type="date" id="dateInput" required></div>
             </div>
-            <button type="submit" id="submitBtn" class="submit-btn" style="width:calc(100% - 32px); margin:20px 16px; background:var(--ios-blue); color:white; border:none; padding:16px; border-radius:14px; font-size:17px; font-weight:600;">保存</button>
+            <button type="submit" id="submitBtn" class="submit-btn">保存记录</button>
         </form>
 
-        <div class="section-header">本月统计</div>
-        <div class="ios-group" id="monthlyList"></div>
-
         <div class="section-header">历史明细</div>
+        <div class="search-row">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索备注或分类..." oninput="handleSearch()">
+        </div>
+        
         <div id="historyList"></div>
     </div>
 
     <script type="module">
-        // 配置信息
         const SUPABASE_URL = 'https://htqjfniugsahibhkjszb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWpmbml1Z3NhaGliaGtqc3piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDI2NDksImV4cCI6MjA4OTIxODY0OX0.pmMUaaLLZ-RWFt_bkFPFiSLmdM4LKbG6SI-q2TEe-j8';
         
         let supabase;
-        let localData = JSON.parse(localStorage.getItem('cache_expenses') || '[]');
-        let monthlyBudgets = JSON.parse(localStorage.getItem('cache_budgets') || '{}');
+        let localData = [];
+        let monthlyBudgets = {};
+        let currentCategory = "餐饮";
 
-        // 格式化金额，解决 0.1+0.2 精度问题
-        const formatMoney = (num) => Number(num).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const getCurrentMonthStr = () => {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        };
+        // 分类映射图标
+        const catIcons = { "餐饮": "🍔", "购物": "🛍️", "交通": "🚗", "娱乐": "🎮", "其他": "🏷️" };
 
         async function init() {
-            // 1. 优先渲染缓存数据
-            renderUI();
             initDate();
-
+            setupCategoryPicker();
+            
             try {
-                // 2. 加载 Supabase
                 const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
                 supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-                
-                // 3. 初始同步
                 await fetchData();
-                
-                // 4. 开启实时监听
-                supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => fetchData()).subscribe();
-                
-            } catch (err) {
-                showToast("网络连接受限，当前为离线模式");
-                document.getElementById('syncStatus').innerText = "离线模式";
+            } catch (e) {
+                showToast("同步失败，请检查网络");
             }
         }
 
+        function setupCategoryPicker() {
+            const items = document.querySelectorAll('.category-item');
+            items.forEach(item => {
+                item.onclick = () => {
+                    items.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    currentCategory = item.dataset.cat;
+                };
+            });
+        }
+
+        window.setAmount = (val) => { document.getElementById('amountInput').value = val; };
+
         async function fetchData() {
-            document.getElementById('syncStatus').innerText = "同步中...";
-            
+            document.getElementById('syncStatus').innerText = "正在同步...";
             const [expRes, budRes] = await Promise.all([
                 supabase.from('expenses').select('*').order('date', { ascending: false }),
                 supabase.from('budgets').select('*')
             ]);
 
-            if (!expRes.error) {
-                localData = expRes.data;
-                localStorage.setItem('cache_expenses', JSON.stringify(localData));
-            }
+            if (!expRes.error) localData = expRes.data;
             if (!budRes.error) {
-                const bMap = {};
-                budRes.data.forEach(b => bMap[b.month] = b.amount);
-                monthlyBudgets = bMap;
-                localStorage.setItem('cache_budgets', JSON.stringify(monthlyBudgets));
+                budRes.data.forEach(b => monthlyBudgets[b.month] = b.amount);
             }
-
+            
             renderUI();
-            document.getElementById('syncStatus').innerText = "云端已同步";
+            document.getElementById('syncStatus').innerText = "已与云端同步";
         }
 
-        function renderUI() {
-            const historyList = document.getElementById('historyList');
-            const monthlyList = document.getElementById('monthlyList');
+        function renderUI(filterStr = "") {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
             
-            historyList.innerHTML = '';
-            monthlyList.innerHTML = '';
+            let spentThisMonth = 0;
+            const curMonth = new Date().toISOString().substring(0, 7);
 
-            const stats = {};
-            const curMonth = getCurrentMonthStr();
-
-            // 渲染列表
             localData.forEach(item => {
-                const m = item.date.substring(0, 7);
-                stats[m] = (stats[m] || 0) + Number(item.amount);
+                // 计算本月支出
+                if (item.date.substring(0, 7) === curMonth) spentThisMonth += Number(item.amount);
+
+                // 搜索过滤
+                if (filterStr && !item.desc.includes(filterStr) && !item.category?.includes(filterStr)) return;
 
                 const div = document.createElement('div');
                 div.className = 'ios-group';
-                div.style.marginBottom = '12px';
+                div.style.marginBottom = '10px';
                 div.innerHTML = `
                     <div class="list-row">
                         <div class="list-info">
-                            <span class="list-desc">${escape(item.desc)}</span>
-                            <span class="list-date">${item.date}</span>
+                            <span class="list-desc">${catIcons[item.category] || '💰'} ${escape(item.desc)}</span>
+                            <span class="list-sub">${item.date} · ${item.category || '未分类'}</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span class="list-amount">￥${formatMoney(item.amount)}</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="list-amount">￥${Number(item.amount).toFixed(2)}</span>
                             <button class="delete-btn" onclick="handleDelete('${item.id}')">删除</button>
                         </div>
                     </div>
                 `;
-                historyList.appendChild(div);
+                list.appendChild(div);
             });
 
-            // 渲染月度统计
-            Object.keys(stats).sort().reverse().forEach(m => {
-                const row = document.createElement('div');
-                row.className = 'list-row';
-                row.innerHTML = `<span>${m}</span><span style="color:var(--ios-blue); font-weight:600;">￥${formatMoney(stats[m])}</span>`;
-                monthlyList.appendChild(row);
-            });
-
-            // 渲染顶部卡片
+            // 更新预算卡片
             const budget = monthlyBudgets[curMonth] || 0;
-            const spent = stats[curMonth] || 0;
-            const remain = budget - spent;
-
-            document.getElementById('ui-budget-total').innerText = formatMoney(budget);
-            document.getElementById('ui-budget-spent').innerText = formatMoney(spent);
-            const remainEl = document.getElementById('ui-budget-remaining');
-            remainEl.innerText = `￥${formatMoney(remain)}`;
-            remainEl.style.color = remain < 0 ? '#FFD5D5' : 'white';
+            document.getElementById('ui-budget-total').innerText = budget.toFixed(2);
+            document.getElementById('ui-budget-spent').innerText = spentThisMonth.toFixed(2);
+            document.getElementById('ui-budget-remaining').innerText = `￥${(budget - spentThisMonth).toFixed(2)}`;
         }
 
-        // 提交处理
+        window.handleSearch = () => {
+            const val = document.getElementById('searchInput').value.trim();
+            renderUI(val);
+        };
+
         document.getElementById('expenseForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const amount = document.getElementById('amountInput').value;
-            const desc = document.getElementById('descInput').value.trim();
+            const desc = document.getElementById('descInput').value;
             const date = document.getElementById('dateInput').value;
-
-            if(amount <= 0) return showToast("请输入有效金额");
 
             btn.disabled = true;
             btn.innerText = "保存中...";
 
-            const { error } = await supabase.from('expenses').insert([{ amount, desc, date }]);
-            
+            const { error } = await supabase.from('expenses').insert([{ 
+                amount, desc, date, category: currentCategory 
+            }]);
+
             if (!error) {
-                showToast("已保存记录");
+                showToast("保存成功");
                 document.getElementById('amountInput').value = '';
                 document.getElementById('descInput').value = '';
                 await fetchData();
-            } else {
-                showToast("保存失败: " + error.message);
             }
             btn.disabled = false;
-            btn.innerText = "保存";
+            btn.innerText = "保存记录";
         };
 
         window.handleDelete = async (id) => {
-            if(!confirm("确定要删除这条记录吗？")) return;
-            const { error } = await supabase.from('expenses').delete().eq('id', id);
-            if(!error) {
-                showToast("记录已删除");
-                await fetchData();
-            }
+            if (!confirm("确定删除吗？")) return;
+            await supabase.from('expenses').delete().eq('id', id);
+            fetchData();
         };
 
         window.setCloudBudget = async () => {
-            const cur = getCurrentMonthStr();
-            const val = prompt(`设置 ${cur} 的预算金额:`, monthlyBudgets[cur] || 0);
-            if (val !== null && !isNaN(val)) {
-                await supabase.from('budgets').upsert({ month: cur, amount: parseFloat(val) });
+            const m = new Date().toISOString().substring(0, 7);
+            const val = prompt("输入本月预算:", monthlyBudgets[m] || 0);
+            if (val !== null) {
+                await supabase.from('budgets').upsert({ month: m, amount: parseFloat(val) });
                 fetchData();
             }
         };
 
-        function initDate() {
-            const now = new Date();
-            document.getElementById('dateInput').value = now.toISOString().split('T')[0];
-        }
-
+        function initDate() { document.getElementById('dateInput').value = new Date().toISOString().split('T')[0]; }
         function showToast(m) {
             const t = document.getElementById('toast');
             t.innerText = m; t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2500);
+            setTimeout(() => t.classList.remove('show'), 2000);
         }
-
         function escape(s) {
             let d = document.createElement('div');
             d.textContent = s;
