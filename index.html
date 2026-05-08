@@ -11,8 +11,6 @@
     <meta name="theme-color" content="#F2F2F7">
     <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23007AFF' rx='20'/%3E%3Ctext x='50' y='68' font-size='50' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E%E8%B4%A6%3C/text%3E%3C/svg%3E">
 
-    <script src="https://npm.elemecdn.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
     <style>
         :root {
             --ios-bg: #F2F2F7;
@@ -290,23 +288,100 @@
 
         <div class="section-header">月度统计</div>
         <div class="ios-group" id="monthlyList">
-            <div class="empty-state">等待连接...</div>
+            <div class="empty-state" id="statusMonthly">等待底层组件加载...</div>
         </div>
 
         <div class="section-header">历史记录</div>
         <div class="ios-group" id="historyList">
-            <div class="empty-state">等待连接...</div>
+            <div class="empty-state" id="statusHistory">正在尝试穿透网络...</div>
         </div>
     </div>
 
     <script>
-        // 全局错误捕获
-        window.onerror = function(message) {
-            console.error("全局错误:", message);
-            return true; 
-        };
+        // ==========================================
+        // 核心一：纯 UI 瞬间渲染（与网络剥离）
+        // ==========================================
+        function initDateUI() {
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            document.getElementById('dateInput').value = year + '-' + month + '-' + day;
+        }
+        // 第一时间填好日期，再也不留白！
+        initDateUI();
 
-        // PWA 安装逻辑
+        // ==========================================
+        // 核心二：全球顶级 CDN 智能备胎池 (专破微信屏蔽)
+        // ==========================================
+        var cdnList = [
+            "https://cdnjs.cloudflare.com/ajax/libs/supabase/2.38.4/supabase.min.js", // Cloudflare节点 (全球最稳，微信极少屏蔽)
+            "https://fastly.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js", // Fastly节点
+            "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js", // 原始 Unpkg
+            "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js", // 原始 jsDelivr
+            "https://npm.elemecdn.com/@supabase/supabase-js@2/dist/umd/supabase.min.js" // 兜底
+        ];
+        var currentCdnIndex = 0;
+
+        function loadSupabaseEngine() {
+            if (currentCdnIndex >= cdnList.length) {
+                // 如果五条路全被封杀，才显示失败
+                document.getElementById('statusHistory').innerHTML = '<span style="color:var(--ios-red);">网络受限，请点击右上角「在浏览器打开」</span>';
+                document.getElementById('statusMonthly').innerHTML = '网络已断开';
+                return;
+            }
+
+            // 动态创建加载标签
+            var script = document.createElement('script');
+            script.src = cdnList[currentCdnIndex];
+            
+            script.onload = function() {
+                // 加载完检查 supabase 是否存在
+                if (typeof window.supabase !== 'undefined') {
+                    startApp(); // 成功点亮，启动应用！
+                } else {
+                    currentCdnIndex++;
+                    loadSupabaseEngine(); // 文件损坏，换下一个
+                }
+            };
+            
+            script.onerror = function() {
+                currentCdnIndex++;
+                loadSupabaseEngine(); // 网络被墙，换下一个
+            };
+
+            document.head.appendChild(script);
+        }
+
+        // 立即开始穿透网络
+        loadSupabaseEngine();
+
+        // ==========================================
+        // 业务逻辑与全局变量区
+        // ==========================================
+        const SUPABASE_URL = 'https://htqjfniugsahibhkjszb.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWpmbml1Z3NhaGliaGtqc3piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDI2NDksImV4cCI6MjA4OTIxODY0OX0.pmMUaaLLZ-RWFt_bkFPFiSLmdM4LKbG6SI-q2TEe-j8';
+        
+        let supabase = null;
+        let localData = []; 
+        let monthlyBudgets = {}; 
+
+        // 当底层网络组件就绪后，启动应用
+        function startApp() {
+            document.getElementById('historyList').innerHTML = '<div class="empty-state">正在同步云端账本...</div>';
+            document.getElementById('monthlyList').innerHTML = '<div class="empty-state">正在同步...</div>';
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            fetchCloudData().then(function() {
+                // 开启无缝实时监听
+                supabase.channel('realtime-db')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, function() { fetchCloudData(); })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets' }, function() { fetchCloudData(); })
+                    .subscribe();
+            });
+        }
+
+        // PWA 安装引导功能
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
@@ -317,7 +392,7 @@
             document.getElementById('installBtn').style.display = 'none';
         }
 
-        function triggerInstall() {
+        window.triggerInstall = function() {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS) {
                 document.getElementById('installGuide').classList.add('show');
@@ -330,24 +405,19 @@
                     deferredPrompt = null;
                 });
             } else {
-                showToast("请点击浏览器右上角菜单中的「添加到主屏幕/桌面」");
+                showToast("请点击浏览器右上角菜单中的「添加到主屏幕」");
             }
-        }
+        };
 
-        // 数据库配置
-        const SUPABASE_URL = 'https://htqjfniugsahibhkjszb.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWpmbml1Z3NhaGliaGtqc3piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDI2NDksImV4cCI6MjA4OTIxODY0OX0.pmMUaaLLZ-RWFt_bkFPFiSLmdM4LKbG6SI-q2TEe-j8';
-        
-        let supabase = null;
-        let localData = []; 
-        let monthlyBudgets = {}; 
-
+        // 获取当月格式字符串 (YYYY-MM)
         function getCurrentMonthStr() {
-            const today = new Date();
+            var today = new Date();
             return today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
         }
 
-        function setCloudBudget() {
+        // 写入当前月预算
+        window.setCloudBudget = function() {
+            if (!supabase) return showToast("网络尚未连接，请稍后");
             const currentMonthStr = getCurrentMonthStr();
             const currentBudget = monthlyBudgets[currentMonthStr] || '';
             const input = prompt('请输入本月 (' + currentMonthStr + ') 的总生活费预算 (元) :', currentBudget);
@@ -359,48 +429,17 @@
                     showToast('云端同步中...');
                     
                     supabase.from('budgets').upsert({ month: currentMonthStr, amount: val }).then(function(res) {
-                        if (res.error) {
-                            showToast('同步失败: ' + res.error.message);
-                        } else {
-                            showToast('当月预算已更新至云端');
-                        }
+                        if (res.error) showToast('同步失败: ' + res.error.message);
+                        else showToast('当月预算已更新至云端');
                         document.getElementById('setBudgetBtn').disabled = false;
                     });
                 } else {
                     showToast('请输入正确的数字金额');
                 }
             }
-        }
+        };
 
-        // 核心启动逻辑（轮询等待底层脚本加载完毕，防止弱网白屏）
-        let checkTimer = setInterval(function() {
-            if (typeof window.supabase !== 'undefined') {
-                clearInterval(checkTimer);
-                initApp();
-            }
-        }, 100);
-
-        // 超时保护
-        setTimeout(function() {
-            if (!supabase) {
-                clearInterval(checkTimer);
-                document.getElementById('historyList').innerHTML = '<div class="empty-state" style="color:var(--ios-red);">网络加载异常，请尝试在浏览器中重新打开</div>';
-            }
-        }, 10000);
-
-        function initApp() {
-            initDateUI();
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            
-            fetchCloudData().then(function() {
-                // 开启实时监听
-                supabase.channel('realtime-db')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, function() { fetchCloudData(); })
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets' }, function() { fetchCloudData(); })
-                    .subscribe();
-            });
-        }
-
+        // 获取流水和预算数据
         function fetchCloudData() {
             return Promise.all([
                 supabase.from('expenses').select('*').order('date', { ascending: false }).order('id', { ascending: false }),
@@ -409,9 +448,7 @@
                 const expensesRes = results[0];
                 const budgetsRes = results[1];
 
-                if (!expensesRes.error) {
-                    localData = expensesRes.data || [];
-                }
+                if (!expensesRes.error) localData = expensesRes.data || [];
                 
                 monthlyBudgets = {};
                 if (!budgetsRes.error && budgetsRes.data) {
@@ -419,16 +456,16 @@
                         monthlyBudgets[item.month] = parseFloat(item.amount) || 0;
                     });
                 }
-
                 renderUI();
             }).catch(function(err) {
-                document.getElementById('historyList').innerHTML = '<div class="empty-state" style="color:red;">拉取失败，请检查网络</div>';
+                document.getElementById('historyList').innerHTML = '<div class="empty-state" style="color:var(--ios-red);">拉取失败，请检查网络</div>';
             });
         }
 
+        // 提交表单增加记录
         document.getElementById('expenseForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (!supabase) return;
+            if (!supabase) return showToast("网络正在连接，请稍后");
 
             const btn = document.getElementById('submitBtn');
             const date = document.getElementById('dateInput').value;
@@ -451,12 +488,14 @@
             });
         });
 
-        function deleteItem(id) {
+        // 删除记录
+        window.deleteItem = function(id) {
             if (!confirm('确定删除？')) return;
             showToast('处理中...');
             supabase.from('expenses').delete().eq('id', id);
-        }
+        };
 
+        // 渲染页面元素
         function renderUI() {
             const historyList = document.getElementById('historyList');
             const monthlyList = document.getElementById('monthlyList');
@@ -496,6 +535,7 @@
                 });
             }
 
+            // 更新独立预算卡片
             const currentMonthStr = getCurrentMonthStr();
             const thisMonthBudget = monthlyBudgets[currentMonthStr] || 0;
             const currentMonthSpent = months[currentMonthStr] || 0;
@@ -517,11 +557,7 @@
             document.getElementById('budgetCard').style.opacity = '1';
         }
 
-        function initDateUI() {
-            const d = new Date();
-            document.getElementById('dateInput').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        }
-
+        // 工具函数
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg;
