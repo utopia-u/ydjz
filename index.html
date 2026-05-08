@@ -43,7 +43,6 @@
             margin: 0;
         }
 
-        /* 预算卡片样式 */
         .budget-card {
             margin: 0 16px 25px;
             padding: 20px;
@@ -167,9 +166,9 @@
             padding: 30px 20px;
             color: var(--ios-text-secondary);
             font-size: 15px;
+            line-height: 1.5;
         }
 
-        /* 顶部小提示 */
         #status-toast {
             text-align: center;
             font-size: 13px;
@@ -228,7 +227,12 @@
     </div>
 
     <script>
-        // 任何底层代码错误都会在这里显示出来
+        // 捕捉未处理的 Promise 异常 (专门针对网络超时)
+        window.addEventListener('unhandledrejection', function(event) {
+            document.getElementById('status-toast').innerText = "网络异常: " + event.reason.message;
+            document.getElementById('status-toast').style.color = "red";
+        });
+
         window.onerror = function(msg) {
             document.getElementById('status-toast').innerText = "代码错误: " + msg;
             document.getElementById('status-toast').style.color = "red";
@@ -241,7 +245,6 @@
         let localData = []; 
         let monthlyBudgets = {}; 
 
-        // 初始化日期
         function initDateUI() {
             const d = new Date();
             const year = d.getFullYear();
@@ -250,16 +253,21 @@
             document.getElementById('dateInput').value = `${year}-${month}-${day}`;
         }
 
-        // 页面加载完毕执行
         window.onload = function() {
             initDateUI();
             if (typeof window.supabase === 'undefined') {
                 document.getElementById('status-toast').innerText = "核心组件加载失败";
                 document.getElementById('status-toast').style.color = "red";
+                document.getElementById('historyList').innerHTML = '<div class="empty-state" style="color:var(--ios-red);">组件加载失败，请刷新</div>';
+                document.getElementById('monthlyList').innerHTML = '<div class="empty-state">连接断开</div>';
                 return;
             }
-            // 初始化数据库连接
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            // 【核心修复1】关闭持久化会话，防止微信 WebView 读取 LocalStorage 导致应用崩溃
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                auth: { persistSession: false } 
+            });
+            
             fetchCloudData();
         };
 
@@ -275,32 +283,50 @@
             return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
         }
 
-        // 获取数据 (剥离了导致崩溃的 Realtime)
+        // 【核心修复2】带超时控制的拉取函数，解决网络静默挂起的问题
         async function fetchCloudData() {
             showStatus('正在同步...');
+            document.getElementById('historyList').innerHTML = '<div class="empty-state">同步中...</div>';
+            
             try {
-                const [expensesRes, budgetsRes] = await Promise.all([
+                // 设置一个 8 秒的定时炸弹
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error("请求超时，网络可能被拦截")), 8000);
+                });
+
+                // 发起真实的数据请求
+                const fetchPromise = Promise.all([
                     supabase.from('expenses').select('*').order('date', { ascending: false }).order('id', { ascending: false }),
                     supabase.from('budgets').select('*')
                 ]);
 
-                if (!expensesRes.error) localData = expensesRes.data || [];
-                
+                // 让真实请求和定时炸弹赛跑
+                const [expensesRes, budgetsRes] = await Promise.race([fetchPromise, timeoutPromise]);
+
+                // 处理 API 抛出的错误信息
+                if (expensesRes.error) throw new Error(expensesRes.error.message);
+                if (budgetsRes.error) throw new Error(budgetsRes.error.message);
+
+                localData = expensesRes.data || [];
                 monthlyBudgets = {};
-                if (!budgetsRes.error && budgetsRes.data) {
+                if (budgetsRes.data) {
                     budgetsRes.data.forEach(item => {
                         monthlyBudgets[item.month] = parseFloat(item.amount) || 0;
                     });
                 }
                 renderUI();
                 showStatus('同步完成');
+
             } catch (err) {
+                // 如果出现任何错误（包括上面的8秒超时），立刻把白框里的内容替换掉，绝不卡死
                 document.getElementById('status-toast').innerText = "拉取失败";
-                document.getElementById('status-toast').style.color = "red";
+                document.getElementById('status-toast').style.color = "var(--ios-red)";
+                
+                document.getElementById('historyList').innerHTML = `<div class="empty-state" style="color:var(--ios-red);">拉取数据失败<br><span style="font-size:12px;color:#888;">${err.message}</span></div>`;
+                document.getElementById('monthlyList').innerHTML = `<div class="empty-state">连接失败</div>`;
             }
         }
 
-        // 设置预算
         async function setCloudBudget() {
             if (!supabase) return;
             const currentMonthStr = getCurrentMonthStr();
@@ -311,12 +337,12 @@
                 const val = parseFloat(input);
                 if (!isNaN(val) && val >= 0) {
                     showStatus('保存预算中...');
-                    const { error } = await supabase.from('budgets').upsert({ month: currentMonthStr, amount: val });
-                    if (error) {
-                        alert('同步失败: ' + error.message);
-                    } else {
-                        // 保存成功后手动拉取一次刷新界面
+                    try {
+                        const { error } = await supabase.from('budgets').upsert({ month: currentMonthStr, amount: val });
+                        if (error) throw error;
                         fetchCloudData();
+                    } catch (err) {
+                        alert('同步失败: ' + err.message);
                     }
                 } else {
                     alert('请输入正确的数字金额');
@@ -324,7 +350,6 @@
             }
         }
 
-        // 增加记录
         async function addRecord() {
             if (!supabase) return;
             const btn = document.getElementById('submitBtn');
@@ -346,7 +371,6 @@
                 
                 document.getElementById('amountInput').value = '';
                 document.getElementById('descInput').value = '';
-                // 核心：保存成功后手动重新拉取数据
                 await fetchCloudData();
             } catch (err) {
                 alert('保存错误: ' + err.message);
@@ -356,21 +380,18 @@
             }
         }
 
-        // 删除记录
         async function deleteItem(id) {
             if (!confirm('确定删除？')) return;
             showStatus('删除中...');
             try {
                 const { error } = await supabase.from('expenses').delete().eq('id', id);
                 if (error) throw error;
-                // 核心：删除成功后手动重新拉取数据
                 await fetchCloudData();
             } catch (err) {
                 alert('删除失败');
             }
         }
 
-        // 渲染 UI
         function renderUI() {
             const historyList = document.getElementById('historyList');
             const monthlyList = document.getElementById('monthlyList');
@@ -381,10 +402,9 @@
             
             localData.forEach(item => {
                 const val = Number(item.amount) || 0;
+                const safeDesc = String(item.desc).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":"&#39;",'"':"&quot;"}[c]));
                 const row = document.createElement('div');
                 row.className = 'list-row';
-                // 避免使用容易引发 xss 问题的直接拼接，但在此为简化先做简单转义
-                const safeDesc = String(item.desc).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":"&#39;",'"':"&quot;"}[c]));
                 row.innerHTML = `
                     <div class="list-info">
                         <span class="list-desc">${safeDesc}</span>
@@ -412,7 +432,6 @@
                 });
             }
 
-            // 更新预算卡片
             const currentMonthStr = getCurrentMonthStr();
             const thisMonthBudget = monthlyBudgets[currentMonthStr] || 0;
             const currentMonthSpent = months[currentMonthStr] || 0;
