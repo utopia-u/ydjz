@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>记账本 Pro - 严谨分类修复版</title>
+    <title>记账本 Pro - 智能分类版</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -17,6 +17,7 @@
             --ios-card: #FFFFFF;
             --ios-blue: #007AFF;
             --ios-red: #FF3B30;
+            --ios-green: #34C759;
             --ios-text-primary: #000000;
             --ios-text-secondary: #8E8E93;
             --ios-separator: rgba(60, 60, 67, 0.2);
@@ -29,12 +30,16 @@
             margin: 0;
             padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; 
             -webkit-font-smoothing: antialiased;
+            user-select: none;
         }
 
+        ::-webkit-scrollbar { display: none; }
         .container { max-width: 500px; margin: 0 auto; padding-bottom: 60px; }
+
+        /* Header & Labels */
         .header-area { display: flex; justify-content: space-between; align-items: center; margin: 20px 16px 15px; }
         .large-title { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
-        .section-header { font-size: 13px; text-transform: uppercase; color: var(--ios-text-secondary); margin: 25px 16px 8px; font-weight: 500; }
+        .section-header { font-size: 13px; text-transform: uppercase; color: var(--ios-text-secondary); margin: 25px 16px 8px; font-weight: 500; display: flex; justify-content: space-between; }
 
         /* Budget Card */
         .budget-card {
@@ -42,8 +47,9 @@
             background: linear-gradient(145deg, #007AFF, #0056b3);
             border-radius: 24px; color: white;
             box-shadow: 0 12px 24px rgba(0, 122, 255, 0.3);
+            position: relative; overflow: hidden;
         }
-        .budget-amount { font-size: 42px; font-weight: 800; margin: 12px 0; }
+        .budget-amount { font-size: 42px; font-weight: 800; margin: 12px 0; font-variant-numeric: tabular-nums; }
 
         /* Category Picker */
         .category-picker { display: flex; justify-content: space-around; padding: 15px 10px; background: var(--ios-card); border-bottom: 0.5px solid var(--ios-separator); }
@@ -52,17 +58,26 @@
         .cat-icon { font-size: 24px; }
         .cat-label { font-size: 11px; }
 
-        /* Inputs */
+        /* Quick Amounts */
+        .quick-amounts { display: flex; gap: 8px; padding: 10px 16px; background: var(--ios-card); overflow-x: auto; border-bottom: 0.5px solid var(--ios-separator); }
+        .q-btn { background: #F2F2F7; border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; color: var(--ios-blue); font-weight: 500; white-space: nowrap; }
+
+        /* List & Input Groups */
         .ios-group { background-color: var(--ios-card); border-radius: 12px; margin: 0 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
         .input-row { display: flex; align-items: center; padding: 0 16px; border-bottom: 0.5px solid var(--ios-separator); min-height: 48px; }
-        .input-row input { flex: 1; border: none; outline: none; font-size: 17px; padding: 12px 0; background: transparent; }
+        .input-row input { flex: 1; border: none; outline: none; font-size: 17px; padding: 12px 0; background: transparent; color: var(--ios-text-primary); }
         
-        .submit-btn { width: calc(100% - 32px); margin: 20px 16px; background: var(--ios-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; }
-        .delete-btn { color: var(--ios-red); border: none; background: #FFF1F0; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+        .search-row { margin: 10px 16px; position: relative; }
+        .search-input { width: 100%; border: none; background: #E3E3E8; padding: 8px 12px; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; }
 
         .list-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 0.5px solid var(--ios-separator); }
+        .list-info { display: flex; flex-direction: column; }
         .list-desc { font-size: 17px; font-weight: 500; }
         .list-sub { font-size: 13px; color: var(--ios-text-secondary); }
+        .list-amount { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+        .submit-btn { width: calc(100% - 32px); margin: 20px 16px; background: var(--ios-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; }
+        .delete-btn { color: var(--ios-red); border: none; background: #FFF1F0; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
 
         #toast { position: fixed; bottom: 50px; left: 50%; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; transform: translate(-50%, 100px); opacity: 0; transition: 0.3s; z-index: 100; }
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -79,9 +94,12 @@
         </div>
 
         <div class="budget-card">
-            <div style="font-size:14px; opacity:0.8;">本月剩余</div>
+            <div style="display:flex; justify-content:space-between; font-size:14px; opacity:0.8;">
+                <span>本月剩余</span>
+                <span onclick="setCloudBudget()" style="text-decoration:underline;">修改预算</span>
+            </div>
             <div class="budget-amount" id="ui-budget-remaining">￥0.00</div>
-            <div style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8;">
+            <div style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
                 <span>预算: <span id="ui-budget-total">0.00</span></span>
                 <span>已花: <span id="ui-budget-spent">0.00</span></span>
             </div>
@@ -97,14 +115,24 @@
                     <div class="category-item" data-cat="娱乐"><span class="cat-icon">🎮</span><span class="cat-label">娱乐</span></div>
                     <div class="category-item" data-cat="其他"><span class="cat-icon">🏷️</span><span class="cat-label">其他</span></div>
                 </div>
+                <div class="quick-amounts">
+                    <button type="button" class="q-btn" onclick="setAmount(10)">￥10</button>
+                    <button type="button" class="q-btn" onclick="setAmount(20)">￥20</button>
+                    <button type="button" class="q-btn" onclick="setAmount(50)">￥50</button>
+                    <button type="button" class="q-btn" onclick="setAmount(100)">￥100</button>
+                </div>
                 <div class="input-row"><input type="number" id="amountInput" placeholder="请输入金额" step="0.01" inputmode="decimal" required></div>
-                <div class="input-row"><input type="text" id="descInput" placeholder="输入备注（如：生抽、打车、加油）" maxlength="20" required autocomplete="off"></div>
+                <div class="input-row"><input type="text" id="descInput" placeholder="输入备注（自动匹配分类）" maxlength="20" required></div>
                 <div class="input-row"><input type="date" id="dateInput" required></div>
             </div>
             <button type="submit" id="submitBtn" class="submit-btn">保存记录</button>
         </form>
 
         <div class="section-header">历史明细</div>
+        <div class="search-row">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索备注或分类..." oninput="handleSearch()">
+        </div>
+        
         <div id="historyList"></div>
     </div>
 
@@ -114,27 +142,15 @@
         
         let supabase;
         let localData = [];
+        let monthlyBudgets = {};
         let currentCategory = "餐饮";
 
-        // --- 极其严谨的逻辑配置 ---
-        const smartLogic = {
-            "餐饮": {
-                // 厨房调料或食材直接锁定餐饮，禁止进入交通
-                priority: ["生抽", "蚝油", "酱油", "老抽", "食用油", "橄榄油", "料酒", "米面粮油"],
-                keywords: ["饭", "餐", "饮", "肉", "菜", "水果", "奶茶", "零食", "火锅", "美团", "饿了么"],
-                exclude: ["加油", "汽油", "柴油", "打车"] 
-            },
-            "交通": {
-                priority: ["打车", "滴滴", "地铁", "公交", "加油", "泊车", "过路费"],
-                keywords: ["车", "油费", "高德", "12306", "单车"],
-                // 严谨拦截：包含调料词汇的绝对不能算交通
-                exclude: ["生抽", "蚝油", "酱油", "老抽", "食用油", "料酒", "米面粮油"]
-            },
-            "购物": {
-                priority: ["超市", "淘宝", "京东", "拼多多", "便利店"],
-                keywords: ["买", "鞋", "衣", "纸", "洗", "药"],
-                exclude: ["买票"]
-            }
+        // 自动分类词库
+        const categoryKeywords = {
+            "餐饮": ["饭", "面", "饮", "餐", "肉", "菜", "饿了么", "美团", "咖啡", "奶茶", "水果", "火锅"],
+            "购物": ["买", "裙", "鞋", "衣", "淘宝", "拼多多", "京东", "超市", "纸", "洗", "药", "屈臣氏"],
+            "交通": ["打车", "地铁", "公交", "油", "停车", "滴滴", "单车", "票", "高铁", "飞机"],
+            "娱乐": ["玩", "电影", "游戏", "充值", "会员", "网吧", "演唱会", "KTV", "密室", "门票"]
         };
 
         const catIcons = { "餐饮": "🍔", "购物": "🛍️", "交通": "🚗", "娱乐": "🎮", "其他": "🏷️" };
@@ -142,125 +158,149 @@
         async function init() {
             initDate();
             setupCategoryPicker();
-            setupSmartCategory();
+            setupAutoCategory(); // 初始化自动分类监听
             
             try {
                 const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
                 supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
                 await fetchData();
-            } catch (e) { showToast("同步失败"); }
+            } catch (e) {
+                showToast("同步失败，请检查网络");
+            }
         }
 
-        // 严谨匹配算法
-        function setupSmartCategory() {
+        // 核心：设置自动分类监听
+        function setupAutoCategory() {
             const descInput = document.getElementById('descInput');
             descInput.addEventListener('input', (e) => {
                 const text = e.target.value.trim();
                 if (!text) return;
 
-                let detected = null;
-
-                // 1. 拦截器检查：如果属于某个分类的排除项，必须跳过
-                // 比如输入“生抽”，在交通分类中它属于排除项，直接切断交通的可能性
-                const getPotentialCats = () => {
-                    let possible = [];
-                    for (const [cat, config] of Object.entries(smartLogic)) {
-                        const isExcluded = config.exclude?.some(ex => text.includes(ex));
-                        if (!isExcluded) possible.push(cat);
-                    }
-                    return possible;
-                };
-
-                const activeCats = getPotentialCats();
-
-                // 2. 高优先级匹配（完整词汇）
-                for (const cat of activeCats) {
-                    if (smartLogic[cat].priority?.some(p => text.includes(p))) {
-                        detected = cat;
-                        break;
+                // 遍历词库寻找匹配项
+                for (const [category, keywords] of Object.entries(categoryKeywords)) {
+                    if (keywords.some(k => text.includes(k))) {
+                        updateCategoryUI(category);
+                        break; // 匹配到第一个后停止，避免冲突
                     }
                 }
-
-                // 3. 普通关键词匹配
-                if (!detected) {
-                    for (const cat of activeCats) {
-                        if (smartLogic[cat].keywords?.some(k => text.includes(k))) {
-                            detected = cat;
-                            break;
-                        }
-                    }
-                }
-
-                if (detected) updateCategoryUI(detected);
             });
         }
 
+        // 统一更新分类 UI
         function updateCategoryUI(category) {
             const items = document.querySelectorAll('.category-item');
             items.forEach(item => {
-                const isActive = item.dataset.cat === category;
-                item.classList.toggle('active', isActive);
-                if (isActive) currentCategory = category;
+                if (item.dataset.cat === category) {
+                    item.classList.add('active');
+                    currentCategory = category;
+                } else {
+                    item.classList.remove('active');
+                }
             });
         }
 
         function setupCategoryPicker() {
-            document.querySelectorAll('.category-item').forEach(item => {
+            const items = document.querySelectorAll('.category-item');
+            items.forEach(item => {
                 item.onclick = () => updateCategoryUI(item.dataset.cat);
             });
         }
 
+        window.setAmount = (val) => { document.getElementById('amountInput').value = val; };
+
         async function fetchData() {
-            const { data } = await supabase.from('expenses').select('*').order('date', { ascending: false });
-            if (data) { localData = data; renderUI(); }
-            document.getElementById('syncStatus').innerText = "已同步云端";
+            document.getElementById('syncStatus').innerText = "正在同步...";
+            const [expRes, budRes] = await Promise.all([
+                supabase.from('expenses').select('*').order('date', { ascending: false }),
+                supabase.from('budgets').select('*')
+            ]);
+
+            if (!expRes.error) localData = expRes.data;
+            if (!budRes.error) {
+                budRes.data.forEach(b => monthlyBudgets[b.month] = b.amount);
+            }
+            
+            renderUI();
+            document.getElementById('syncStatus').innerText = "已与云端同步";
         }
 
-        function renderUI() {
+        function renderUI(filterStr = "") {
             const list = document.getElementById('historyList');
             list.innerHTML = '';
-            let spent = 0;
+            
+            let spentThisMonth = 0;
             const curMonth = new Date().toISOString().substring(0, 7);
 
             localData.forEach(item => {
-                if (item.date.substring(0, 7) === curMonth) spent += Number(item.amount);
+                if (item.date.substring(0, 7) === curMonth) spentThisMonth += Number(item.amount);
+                if (filterStr && !item.desc.includes(filterStr) && !item.category?.includes(filterStr)) return;
+
                 const div = document.createElement('div');
                 div.className = 'ios-group';
                 div.style.marginBottom = '10px';
                 div.innerHTML = `
                     <div class="list-row">
                         <div class="list-info">
-                            <span class="list-desc">${catIcons[item.category] || '💰'} ${item.desc}</span>
-                            <div class="list-sub">${item.date} · ${item.category}</div>
+                            <span class="list-desc">${catIcons[item.category] || '💰'} ${escape(item.desc)}</span>
+                            <span class="list-sub">${item.date} · ${item.category || '未分类'}</span>
                         </div>
-                        <span style="font-weight:600">￥${Number(item.amount).toFixed(2)}</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="list-amount">￥${Number(item.amount).toFixed(2)}</span>
+                            <button class="delete-btn" onclick="handleDelete('${item.id}')">删除</button>
+                        </div>
                     </div>
                 `;
                 list.appendChild(div);
             });
-            document.getElementById('ui-budget-spent').innerText = spent.toFixed(2);
+
+            const budget = monthlyBudgets[curMonth] || 0;
+            document.getElementById('ui-budget-total').innerText = budget.toFixed(2);
+            document.getElementById('ui-budget-spent').innerText = spentThisMonth.toFixed(2);
+            document.getElementById('ui-budget-remaining').innerText = `￥${(budget - spentThisMonth).toFixed(2)}`;
         }
+
+        window.handleSearch = () => {
+            const val = document.getElementById('searchInput').value.trim();
+            renderUI(val);
+        };
 
         document.getElementById('expenseForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const payload = {
-                amount: document.getElementById('amountInput').value,
-                desc: document.getElementById('descInput').value,
-                date: document.getElementById('dateInput').value,
-                category: currentCategory
-            };
+            const amount = document.getElementById('amountInput').value;
+            const desc = document.getElementById('descInput').value;
+            const date = document.getElementById('dateInput').value;
 
             btn.disabled = true;
-            const { error } = await supabase.from('expenses').insert([payload]);
+            btn.innerText = "保存中...";
+
+            const { error } = await supabase.from('expenses').insert([{ 
+                amount, desc, date, category: currentCategory 
+            }]);
+
             if (!error) {
-                showToast("已保存");
-                document.getElementById('expenseForm').reset();
-                initDate();
-                updateCategoryUI("餐饮");
+                showToast("保存成功");
+                document.getElementById('amountInput').value = '';
+                document.getElementById('descInput').value = '';
                 await fetchData();
             }
             btn.disabled = false;
+            btn.innerText = "保存记录";
+        };
+
+        window.handleDelete = async (id) => {
+            if (!confirm("确定删除吗？")) return;
+            await supabase.from('expenses').delete().eq('id', id);
+            fetchData();
+        };
+
+        window.setCloudBudget = async () => {
+            const m = new Date().toISOString().substring(0, 7);
+            const val = prompt("输入本月预算:", monthlyBudgets[m] || 0);
+            if (val !== null) {
+                await supabase.from('budgets').upsert({ month: m, amount: parseFloat(val) });
+                fetchData();
+            }
         };
 
         function initDate() { document.getElementById('dateInput').value = new Date().toISOString().split('T')[0]; }
@@ -268,6 +308,11 @@
             const t = document.getElementById('toast');
             t.innerText = m; t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 2000);
+        }
+        function escape(s) {
+            let d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
         }
 
         init();
