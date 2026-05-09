@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>记账本 Pro</title>
+    <title>记账本 Pro - 智能分类版</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -122,7 +122,7 @@
                     <button type="button" class="q-btn" onclick="setAmount(100)">￥100</button>
                 </div>
                 <div class="input-row"><input type="number" id="amountInput" placeholder="请输入金额" step="0.01" inputmode="decimal" required></div>
-                <div class="input-row"><input type="text" id="descInput" placeholder="备注 (如：午饭)" maxlength="20" required></div>
+                <div class="input-row"><input type="text" id="descInput" placeholder="输入备注（自动匹配分类）" maxlength="20" required></div>
                 <div class="input-row"><input type="date" id="dateInput" required></div>
             </div>
             <button type="submit" id="submitBtn" class="submit-btn">保存记录</button>
@@ -145,12 +145,20 @@
         let monthlyBudgets = {};
         let currentCategory = "餐饮";
 
-        // 分类映射图标
+        // 自动分类词库
+        const categoryKeywords = {
+            "餐饮": ["饭", "面", "饮", "餐", "肉", "菜", "饿了么", "美团", "咖啡", "奶茶", "水果", "火锅"],
+            "购物": ["买", "裙", "鞋", "衣", "淘宝", "拼多多", "京东", "超市", "纸", "洗", "药", "屈臣氏"],
+            "交通": ["打车", "地铁", "公交", "油", "停车", "滴滴", "单车", "票", "高铁", "飞机"],
+            "娱乐": ["玩", "电影", "游戏", "充值", "会员", "网吧", "演唱会", "KTV", "密室", "门票"]
+        };
+
         const catIcons = { "餐饮": "🍔", "购物": "🛍️", "交通": "🚗", "娱乐": "🎮", "其他": "🏷️" };
 
         async function init() {
             initDate();
             setupCategoryPicker();
+            setupAutoCategory(); // 初始化自动分类监听
             
             try {
                 const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
@@ -161,14 +169,40 @@
             }
         }
 
+        // 核心：设置自动分类监听
+        function setupAutoCategory() {
+            const descInput = document.getElementById('descInput');
+            descInput.addEventListener('input', (e) => {
+                const text = e.target.value.trim();
+                if (!text) return;
+
+                // 遍历词库寻找匹配项
+                for (const [category, keywords] of Object.entries(categoryKeywords)) {
+                    if (keywords.some(k => text.includes(k))) {
+                        updateCategoryUI(category);
+                        break; // 匹配到第一个后停止，避免冲突
+                    }
+                }
+            });
+        }
+
+        // 统一更新分类 UI
+        function updateCategoryUI(category) {
+            const items = document.querySelectorAll('.category-item');
+            items.forEach(item => {
+                if (item.dataset.cat === category) {
+                    item.classList.add('active');
+                    currentCategory = category;
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
         function setupCategoryPicker() {
             const items = document.querySelectorAll('.category-item');
             items.forEach(item => {
-                item.onclick = () => {
-                    items.forEach(i => i.classList.remove('active'));
-                    item.classList.add('active');
-                    currentCategory = item.dataset.cat;
-                };
+                item.onclick = () => updateCategoryUI(item.dataset.cat);
             });
         }
 
@@ -198,10 +232,7 @@
             const curMonth = new Date().toISOString().substring(0, 7);
 
             localData.forEach(item => {
-                // 计算本月支出
                 if (item.date.substring(0, 7) === curMonth) spentThisMonth += Number(item.amount);
-
-                // 搜索过滤
                 if (filterStr && !item.desc.includes(filterStr) && !item.category?.includes(filterStr)) return;
 
                 const div = document.createElement('div');
@@ -222,7 +253,6 @@
                 list.appendChild(div);
             });
 
-            // 更新预算卡片
             const budget = monthlyBudgets[curMonth] || 0;
             document.getElementById('ui-budget-total').innerText = budget.toFixed(2);
             document.getElementById('ui-budget-spent').innerText = spentThisMonth.toFixed(2);
