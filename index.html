@@ -145,12 +145,31 @@
         let monthlyBudgets = {};
         let currentCategory = "餐饮";
 
-        // 自动分类词库
+        // 自动分类词库（已精细化优化）
         const categoryKeywords = {
-            "餐饮": ["饭", "面", "饮", "餐", "肉", "菜", "饿了么", "美团", "咖啡", "奶茶", "水果", "火锅"],
-            "购物": ["买", "裙", "鞋", "衣", "淘宝", "拼多多", "京东", "超市", "纸", "洗", "药", "屈臣氏"],
-            "交通": ["打车", "地铁", "公交", "油", "停车", "滴滴", "单车", "票", "高铁", "飞机"],
-            "娱乐": ["玩", "电影", "游戏", "充值", "会员", "网吧", "演唱会", "KTV", "密室", "门票"]
+            "餐饮": [
+                "饭", "面", "粉", "餐", "肉", "菜", "汤", "粥", 
+                "饿了么", "美团", "外卖", 
+                "咖啡", "奶茶", "饮品", "水", "水果", "零食", "夜宵", "火锅", "烧烤", 
+                "生抽", "老抽", "酱油", "蚝油", "醋", "盐", "糖", "调料", "米", "油盐"
+            ],
+            "购物": [
+                "衣服", "裤子", "裙", "鞋", "包", 
+                "淘宝", "拼多多", "京东", "得物", "超市", "便利店", 
+                "纸巾", "卫生纸", "洗面奶", "沐浴露", "洗发水", "洗衣液", "洗洁精", "洗护",
+                "药", "医院", "买药", "屈臣氏", "日用品", "花"
+            ],
+            "交通": [
+                "打车", "地铁", "公交", "巴士", 
+                "加油", "汽油", "充电", "油费", 
+                "停车", "过路费", "高速", 
+                "滴滴", "曹操", "单车", "共享单车", 
+                "高铁", "动车", "火车", "飞机", "机票", "车票", "船票"
+            ],
+            "娱乐": [
+                "玩", "电影", "游戏", "Steam", "充值", "会员", "黑神话",
+                "网吧", "电竞", "演唱会", "KTV", "密室", "剧本杀", "门票", "游乐园", "酒吧", "旅游", "住宿"
+            ]
         };
 
         const catIcons = { "餐饮": "🍔", "购物": "🛍️", "交通": "🚗", "娱乐": "🎮", "其他": "🏷️" };
@@ -169,19 +188,28 @@
             }
         }
 
-        // 核心：设置自动分类监听
+        // 核心：设置自动分类监听 (升级版长词优先匹配逻辑)
         function setupAutoCategory() {
             const descInput = document.getElementById('descInput');
             descInput.addEventListener('input', (e) => {
                 const text = e.target.value.trim();
                 if (!text) return;
 
-                // 遍历词库寻找匹配项
+                let bestMatchCategory = null;
+                let maxMatchLength = 0;
+
+                // 遍历寻找最长匹配词（越长的词越精准）
                 for (const [category, keywords] of Object.entries(categoryKeywords)) {
-                    if (keywords.some(k => text.includes(k))) {
-                        updateCategoryUI(category);
-                        break; // 匹配到第一个后停止，避免冲突
+                    for (const keyword of keywords) {
+                        if (text.includes(keyword) && keyword.length > maxMatchLength) {
+                            maxMatchLength = keyword.length;
+                            bestMatchCategory = category;
+                        }
                     }
+                }
+
+                if (bestMatchCategory) {
+                    updateCategoryUI(bestMatchCategory);
                 }
             });
         }
