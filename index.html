@@ -61,6 +61,7 @@
         /* Quick Amounts */
         .quick-amounts { display: flex; gap: 8px; padding: 10px 16px; background: var(--ios-card); overflow-x: auto; border-bottom: 0.5px solid var(--ios-separator); }
         .q-btn { background: #F2F2F7; border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; color: var(--ios-blue); font-weight: 500; white-space: nowrap; }
+        .q-btn:active { background: #E3E3E8; }
 
         /* List & Input Groups */
         .ios-group { background-color: var(--ios-card); border-radius: 12px; margin: 0 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
@@ -76,11 +77,15 @@
         .list-sub { font-size: 13px; color: var(--ios-text-secondary); }
         .list-amount { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-        .submit-btn { width: calc(100% - 32px); margin: 20px 16px; background: var(--ios-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; }
-        .delete-btn { color: var(--ios-red); border: none; background: #FFF1F0; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+        .submit-btn { width: calc(100% - 32px); margin: 20px 16px; background: var(--ios-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; transition: opacity 0.2s;}
+        .submit-btn:disabled { opacity: 0.6; }
+        .delete-btn { color: var(--ios-red); border: none; background: #FFF1F0; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
 
-        #toast { position: fixed; bottom: 50px; left: 50%; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; transform: translate(-50%, 100px); opacity: 0; transition: 0.3s; z-index: 100; }
+        #toast { position: fixed; bottom: 50px; left: 50%; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; transform: translate(-50%, 100px); opacity: 0; transition: 0.3s; z-index: 100; pointer-events: none;}
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--ios-text-secondary); }
+        .empty-icon { font-size: 40px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -96,7 +101,7 @@
         <div class="budget-card">
             <div style="display:flex; justify-content:space-between; font-size:14px; opacity:0.8;">
                 <span>本月剩余</span>
-                <span onclick="setCloudBudget()" style="text-decoration:underline;">修改预算</span>
+                <span onclick="setCloudBudget()" style="text-decoration:underline; cursor:pointer;">修改预算</span>
             </div>
             <div class="budget-amount" id="ui-budget-remaining">￥0.00</div>
             <div style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
@@ -116,12 +121,12 @@
                     <div class="category-item" data-cat="其他"><span class="cat-icon">🏷️</span><span class="cat-label">其他</span></div>
                 </div>
                 <div class="quick-amounts">
-                    <button type="button" class="q-btn" onclick="setAmount(10)">￥10</button>
-                    <button type="button" class="q-btn" onclick="setAmount(20)">￥20</button>
-                    <button type="button" class="q-btn" onclick="setAmount(50)">￥50</button>
-                    <button type="button" class="q-btn" onclick="setAmount(100)">￥100</button>
+                    <button type="button" class="q-btn" onclick="setAmount(10)">+￥10</button>
+                    <button type="button" class="q-btn" onclick="setAmount(20)">+￥20</button>
+                    <button type="button" class="q-btn" onclick="setAmount(50)">+￥50</button>
+                    <button type="button" class="q-btn" onclick="setAmount(100)">+￥100</button>
                 </div>
-                <div class="input-row"><input type="number" id="amountInput" placeholder="请输入金额" step="0.01" inputmode="decimal" required></div>
+                <div class="input-row"><input type="number" id="amountInput" placeholder="请输入金额" step="0.01" min="0.01" inputmode="decimal" required></div>
                 <div class="input-row"><input type="text" id="descInput" placeholder="输入备注（自动匹配分类）" maxlength="20" required></div>
                 <div class="input-row"><input type="date" id="dateInput" required></div>
             </div>
@@ -138,6 +143,7 @@
 
     <script type="module">
         const SUPABASE_URL = 'https://htqjfniugsahibhkjszb.supabase.co';
+        // 请注意：在真实生产环境中，务必在 Supabase 后台开启 RLS 并配置安全策略
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWpmbml1Z3NhaGliaGtqc3piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDI2NDksImV4cCI6MjA4OTIxODY0OX0.pmMUaaLLZ-RWFt_bkFPFiSLmdM4LKbG6SI-q2TEe-j8';
         
         let supabase;
@@ -145,31 +151,12 @@
         let monthlyBudgets = {};
         let currentCategory = "餐饮";
 
-        // 自动分类词库（已精细化优化）
+        // 自动分类词库
         const categoryKeywords = {
-            "餐饮": [
-                "饭", "面", "粉", "餐", "肉", "菜", "汤", "粥", 
-                "饿了么", "美团", "外卖", 
-                "咖啡", "奶茶", "饮品", "水", "水果", "零食", "夜宵", "火锅", "烧烤", 
-                "生抽", "老抽", "酱油", "蚝油", "醋", "盐", "糖", "调料", "米", "油盐"
-            ],
-            "购物": [
-                "衣服", "裤子", "裙", "鞋", "包", 
-                "淘宝", "拼多多", "京东", "得物", "超市", "便利店", 
-                "纸巾", "卫生纸", "洗面奶", "沐浴露", "洗发水", "洗衣液", "洗洁精", "洗护",
-                "药", "医院", "买药", "屈臣氏", "日用品", "花"
-            ],
-            "交通": [
-                "打车", "地铁", "公交", "巴士", 
-                "加油", "汽油", "充电", "油费", 
-                "停车", "过路费", "高速", 
-                "滴滴", "曹操", "单车", "共享单车", 
-                "高铁", "动车", "火车", "飞机", "机票", "车票", "船票"
-            ],
-            "娱乐": [
-                "玩", "电影", "游戏", "Steam", "充值", "会员", "黑神话",
-                "网吧", "电竞", "演唱会", "KTV", "密室", "剧本杀", "门票", "游乐园", "酒吧", "旅游", "住宿"
-            ]
+            "餐饮": ["饭", "面", "饮", "餐", "肉", "菜", "饿了么", "美团", "咖啡", "奶茶", "水果", "火锅", "早", "午", "晚"],
+            "购物": ["买", "裙", "鞋", "衣", "淘宝", "拼多多", "京东", "超市", "纸", "洗", "药", "屈臣氏"],
+            "交通": ["打车", "地铁", "公交", "油", "停车", "滴滴", "单车", "票", "高铁", "飞机"],
+            "娱乐": ["玩", "电影", "游戏", "充值", "会员", "网吧", "演唱会", "KTV", "密室", "门票"]
         };
 
         const catIcons = { "餐饮": "🍔", "购物": "🛍️", "交通": "🚗", "娱乐": "🎮", "其他": "🏷️" };
@@ -177,7 +164,7 @@
         async function init() {
             initDate();
             setupCategoryPicker();
-            setupAutoCategory(); // 初始化自动分类监听
+            setupAutoCategory();
             
             try {
                 const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
@@ -185,36 +172,25 @@
                 await fetchData();
             } catch (e) {
                 showToast("同步失败，请检查网络");
+                document.getElementById('syncStatus').innerText = "离线";
             }
         }
 
-        // 核心：设置自动分类监听 (升级版长词优先匹配逻辑)
+        // 自动分类监听
         function setupAutoCategory() {
             const descInput = document.getElementById('descInput');
             descInput.addEventListener('input', (e) => {
                 const text = e.target.value.trim();
                 if (!text) return;
-
-                let bestMatchCategory = null;
-                let maxMatchLength = 0;
-
-                // 遍历寻找最长匹配词（越长的词越精准）
                 for (const [category, keywords] of Object.entries(categoryKeywords)) {
-                    for (const keyword of keywords) {
-                        if (text.includes(keyword) && keyword.length > maxMatchLength) {
-                            maxMatchLength = keyword.length;
-                            bestMatchCategory = category;
-                        }
+                    if (keywords.some(k => text.includes(k))) {
+                        updateCategoryUI(category);
+                        break;
                     }
-                }
-
-                if (bestMatchCategory) {
-                    updateCategoryUI(bestMatchCategory);
                 }
             });
         }
 
-        // 统一更新分类 UI
         function updateCategoryUI(category) {
             const items = document.querySelectorAll('.category-item');
             items.forEach(item => {
@@ -234,16 +210,37 @@
             });
         }
 
-        window.setAmount = (val) => { document.getElementById('amountInput').value = val; };
+        // 优化点：金额累加而非覆盖
+        window.setAmount = (val) => { 
+            const input = document.getElementById('amountInput');
+            const currentVal = parseFloat(input.value) || 0;
+            input.value = (currentVal + val).toFixed(2);
+        };
+
+        // 优化日期显示（今天、昨天）
+        function formatFriendlyDate(dateStr) {
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            if (dateStr === today) return "今天";
+            if (dateStr === yesterday) return "昨天";
+            
+            const parts = dateStr.split('-');
+            return `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+        }
 
         async function fetchData() {
             document.getElementById('syncStatus').innerText = "正在同步...";
+            
+            // 优化点：限制拉取条数，按日期倒序
             const [expRes, budRes] = await Promise.all([
-                supabase.from('expenses').select('*').order('date', { ascending: false }),
+                supabase.from('expenses').select('*').order('date', { ascending: false }).limit(200),
                 supabase.from('budgets').select('*')
             ]);
 
-            if (!expRes.error) localData = expRes.data;
+            if (!expRes.error) {
+                // 确保数据按日期倒序排序
+                localData = expRes.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            }
             if (!budRes.error) {
                 budRes.data.forEach(b => monthlyBudgets[b.month] = b.amount);
             }
@@ -260,9 +257,16 @@
             const curMonth = new Date().toISOString().substring(0, 7);
 
             localData.forEach(item => {
-                if (item.date.substring(0, 7) === curMonth) spentThisMonth += Number(item.amount);
-                if (filterStr && !item.desc.includes(filterStr) && !item.category?.includes(filterStr)) return;
+                // 统计当月总支出
+                if (item.date.substring(0, 7) === curMonth) {
+                    spentThisMonth += Number(item.amount);
+                }
+                
+                // 搜索过滤
+                if (filterStr && !item.desc.includes(filterStr) && !(item.category || '').includes(filterStr)) return;
 
+                const friendlyDate = formatFriendlyDate(item.date);
+                
                 const div = document.createElement('div');
                 div.className = 'ios-group';
                 div.style.marginBottom = '10px';
@@ -270,7 +274,7 @@
                     <div class="list-row">
                         <div class="list-info">
                             <span class="list-desc">${catIcons[item.category] || '💰'} ${escape(item.desc)}</span>
-                            <span class="list-sub">${item.date} · ${item.category || '未分类'}</span>
+                            <span class="list-sub">${friendlyDate} · ${item.category || '未分类'}</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span class="list-amount">￥${Number(item.amount).toFixed(2)}</span>
@@ -280,6 +284,15 @@
                 `;
                 list.appendChild(div);
             });
+
+            // 优化点：空状态提示
+            if (list.children.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <div>暂无记录</div>
+                    </div>`;
+            }
 
             const budget = monthlyBudgets[curMonth] || 0;
             document.getElementById('ui-budget-total').innerText = budget.toFixed(2);
@@ -295,39 +308,87 @@
         document.getElementById('expenseForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const amount = document.getElementById('amountInput').value;
-            const desc = document.getElementById('descInput').value;
+            const amountInput = document.getElementById('amountInput');
+            const descInput = document.getElementById('descInput');
+            
+            const amount = amountInput.value;
+            const desc = descInput.value;
             const date = document.getElementById('dateInput').value;
 
             btn.disabled = true;
             btn.innerText = "保存中...";
 
-            const { error } = await supabase.from('expenses').insert([{ 
-                amount, desc, date, category: currentCategory 
-            }]);
+            // 优化点：乐观更新 (先更新UI，再请求网络)
+            const tempId = 'temp-' + Date.now();
+            const newItem = { id: tempId, amount, desc, date, category: currentCategory };
+            
+            // 将新项目插入到数组最前面（或者按日期排序）
+            localData.unshift(newItem);
+            localData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            renderUI(document.getElementById('searchInput').value.trim()); // 立即渲染
+            
+            // 清空输入框
+            amountInput.value = '';
+            descInput.value = '';
+            updateCategoryUI("餐饮"); // 恢复默认分类
 
-            if (!error) {
+            // 后台异步同步数据
+            const { data, error } = await supabase.from('expenses').insert([{ 
+                amount, desc, date, category: currentCategory 
+            }]).select(); // 使用 select() 让数据库返回带真实 ID 的数据
+
+            if (!error && data && data.length > 0) {
                 showToast("保存成功");
-                document.getElementById('amountInput').value = '';
-                document.getElementById('descInput').value = '';
-                await fetchData();
+                // 将本地的假ID替换为数据库返回的真ID
+                const index = localData.findIndex(item => item.id === tempId);
+                if (index !== -1) {
+                    localData[index] = data[0];
+                }
+            } else {
+                showToast("保存失败，正在撤销");
+                // 保存失败，移除刚刚乐观添加的假数据
+                localData = localData.filter(item => item.id !== tempId);
+                renderUI(document.getElementById('searchInput').value.trim());
             }
+            
             btn.disabled = false;
             btn.innerText = "保存记录";
         };
 
         window.handleDelete = async (id) => {
             if (!confirm("确定删除吗？")) return;
-            await supabase.from('expenses').delete().eq('id', id);
-            fetchData();
+            
+            // 优化点：乐观更新删除（瞬间隐藏）
+            const originalData = [...localData]; // 备份以防万一
+            localData = localData.filter(item => item.id !== id);
+            renderUI(document.getElementById('searchInput').value.trim());
+            
+            // 后台异步删除
+            const { error } = await supabase.from('expenses').delete().eq('id', id);
+            if (error) {
+                showToast("删除失败，正在恢复");
+                localData = originalData; // 恢复数据
+                renderUI(document.getElementById('searchInput').value.trim());
+            } else {
+                showToast("已删除");
+            }
         };
 
         window.setCloudBudget = async () => {
             const m = new Date().toISOString().substring(0, 7);
             const val = prompt("输入本月预算:", monthlyBudgets[m] || 0);
-            if (val !== null) {
-                await supabase.from('budgets').upsert({ month: m, amount: parseFloat(val) });
-                fetchData();
+            if (val !== null && val.trim() !== "" && !isNaN(val)) {
+                
+                // 乐观更新
+                monthlyBudgets[m] = parseFloat(val);
+                renderUI(document.getElementById('searchInput').value.trim());
+                
+                // 异步请求
+                const { error } = await supabase.from('budgets').upsert({ month: m, amount: parseFloat(val) });
+                if (error) {
+                    showToast("预算同步失败");
+                    await fetchData(); // 同步失败拉回老数据
+                }
             }
         };
 
